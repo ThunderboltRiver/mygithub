@@ -27,6 +27,18 @@ def read_sgf_from_zip(zip_file, number):
             return {'win':winners,'size':board_size,'kihu':dic_nodes,'b':b_players,'w':w_players}
 
         else:
-            return {'win':winners[number],'size':board_size[number],'kihu':dic_nodes[file_list[i]],'b':b_players[number],'w':w_players[number]}
+            file_name = infos[number].filename.encode('cp437').decode('utf-8')
+            return {'win':winners[number],'size':board_size[number],'kihu':{file_name:dic_nodes[file_name]},'b':b_players[number],'w':w_players[number]}
 
-#test#
+
+def B_or_W(kihu_dict):
+    Black_list = []
+    White_list = []
+    for key in kihu_dict.keys():
+    	Black = np.array([goishi[1] for goishi in kihu_dict[key] if goishi[0] == 'b'])
+    	White = np.array([goishi[1] for goishi in kihu_dict[key] if goishi[0] == 'w'])
+    	Black_list.append(Black)
+    	White_list.append(White)
+
+
+    return Black_list, White_list
