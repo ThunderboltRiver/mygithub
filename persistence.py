@@ -29,3 +29,4 @@ def read_sgf_from_zip(zip_file, number):
         else:
             return {'win':winners[number],'size':board_size[number],'kihu':dic_nodes[file_list[i]],'b':b_players[number],'w':w_players[number]}
 
+#test#
