@@ -42,3 +42,6 @@ def B_or_W(kihu_dict):
 
 
     return Black_list, White_list
+
+def persistence()	
+
