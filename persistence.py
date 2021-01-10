@@ -26,29 +26,33 @@ class kihu_persistence:
     def random_choice_homology(self, choice_size = 1, replace_bool = False , root = None, plot = None, show_bool = True):
         colors = ['r','g','b','c','m','y','k']
         if root == None:
-            choice_fills = np.random.choice(self.two_dim_fill_list, size = choice_size, replace = replace_bool)
-            for fill in choice_fills:
-                p = d.homology_persistence(fill)
-                dgms = d.init_diagrams(p, fill)
-                for i in len(dgms):
-                    if plot == 'bards':
-                        try:
-                            d.plot.plot_bards(dgms[i],show = show_bool, color = colors[i])
-                        except ValueError:
-                            continue
+            choice_index = np.random.choice(len(self.two_dim_fill_list), size = choice_size, replace = replace_bool)
+            for i in choice_index:
+                for fill in self.two_dim_fill_list[i]:
+                    p = d.homology_persistence(fill)
+                    dgms = d.init_diagrams(p, fill)
+                    fig, axes = plt.subplots(choice_size, len(dgms))
+                    for k in range(len(dgms)):
+                        if plot == 'bards':
+                            try:
+                                d.plot.plot_bards(dgms[k],show = show_bool, color = colors[k])
+                            except ValueError:
+                                continue
 
-                    elif plot == 'density':
-                        try:
-                            d.plot.plot_diagram_density(dgms[i], show = show_bool)
-                        except ValueError:
-                            continue
+                        elif plot == 'density':
+                            try:
+                                d.plot.plot_diagram_density(dgms[k], show = show_bool)
+                            except ValueError:
+                                continue
 
-                    else:
-                        try:
-                            d.plot.plot_diagram(dgms[i],color = colors[i])
+                        else:
+                            try:
+                                d.plot.plot_diagram(dgms[k],pt_style = {'color':colors[k], 'label':'dim = '+str(k)})
 
-                        except ValueError:
-                            continue
+                            except ValueError:
+                                continue
+            plt.legend(loc = 'best')
+            plt.show()
 
 
 class GO_data:
@@ -89,3 +93,10 @@ class GO_data:
             point = show_Lose[i].T
             axes[i][1].scatter(point[0], point[1], color = 'b')
         plt.show()
+
+def test():
+    go = GO_data('../Desktop/NHK2006.zip')
+    pers_win = kihu_persistence(go.Win_kihus)
+    pers_win.random_choice_homology()
+
+test()
