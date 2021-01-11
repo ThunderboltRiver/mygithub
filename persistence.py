@@ -28,10 +28,11 @@ class kihu_persistence:
         if root == None:
             choice_index = np.random.choice(len(self.two_dim_fill_list), size = choice_size, replace = replace_bool)
             for i in choice_index:
-                for fill in self.two_dim_fill_list[i]:
+                fill_list = self.two_dim_fill_list[i]
+                for fill in fill_list:
+                    fig, axes = plt.subplots(choise_size, len(fill_list))
                     p = d.homology_persistence(fill)
                     dgms = d.init_diagrams(p, fill)
-                    fig, axes = plt.subplots(1, len(dgms), figsize = (12, 20))
                     for k in range(len(dgms)):
                         if plot == 'bards':
                             try:
@@ -48,11 +49,11 @@ class kihu_persistence:
                         else:
                             try:
                                 d.plot.plot_diagram(dgms[k],pt_style = {'color':colors[k], 'label':'dim = '+str(k)})
+                                plt.legend(loc = 'best')
 
                             except ValueError:
                                 continue
-                plt.legend(loc = 'best')
-            plt.show()  
+            plt.show()
 
 
 class GO_data:
