@@ -13,7 +13,7 @@ class kihu_persistence:
         self.step = step
         self.kihus = Win_or_Lose_kihus
         ##making filltration
-        self.two_dim_fill_list = []
+        self.dim2_fill_list = []
         for kihu in self.kihus:
             remainder = len(kihu) % step
             turns = np.arange(0, len(kihu),step)
@@ -21,38 +21,43 @@ class kihu_persistence:
                 turns = np.append(turns, len(kihu))
             else:
                 turns[-1] = len(kihu)
-            self.two_dim_fill_list.append([d.fill_rips(pdist(kihu[:t]), dim, radius) for t in turns])
+            self.dim2_fill_list.append([d.fill_rips(pdist(kihu[:t]), dim, radius) for t in turns])
 
     def random_choice_homology(self, choice_size = 1, replace_bool = False , root = None, plot = None, show_bool = True):
         colors = ['r','g','b','c','m','y','k']
         if root == None:
-            choice_index = np.random.choice(len(self.two_dim_fill_list), size = choice_size, replace = replace_bool)
-            for i in choice_index:
-                fill_list = self.two_dim_fill_list[i]
-                for fill in fill_list:
-                    fig, axes = plt.subplots(choise_size, len(fill_list))
-                    p = d.homology_persistence(fill)
-                    dgms = d.init_diagrams(p, fill)
-                    for k in range(len(dgms)):
-                        if plot == 'bards':
-                            try:
-                                d.plot.plot_bards(dgms[k],show = show_bool, color = colors[k])
+            choice_index = np.random.choice(len(self.dim2_fill_list), size = choice_size, replace = replace_bool)
+            choiced_fill_list = [self.dim2_fill_list[i]  for i in choice_index]
+            choiced_len_list = np.array([len(dim2_fill) for dim2_fill in choiced_fill_list])
+            axes_len = np.sum(choiced_len_list)
+            fig, axes = plt.subplots(1, axes_len)
+            for len in choiced_len_list:
+            	for i, ax in enumerate(axes):
+                    for fill in two_dim_fill:
+                        p = d.homology_persistence(fill)
+                        dgms = d.init_diagrams(p, fill)
+                        for k in range(len(dgms)):
+                            if plot == 'bards':
+                                try:
+                                    d.plot.plot_bards(dgms[k],show = show_bool, color = colors[k])
+                                except ValueError:
+                                    continue
+
+                            elif plot == 'density':
+                                try:
+                                    d.plot.plot_diagram_density(dgms[k], show = show_bool)
                             except ValueError:
                                 continue
 
-                        elif plot == 'density':
-                            try:
-                                d.plot.plot_diagram_density(dgms[k], show = show_bool)
-                            except ValueError:
-                                continue
+                            else:
+                                try:
+                                    d.plot.plot_diagram(dgms[k],ax = ax, pt_style = {'color':colors[k], 'label':'dim = '+str(k)})
 
-                        else:
-                            try:
-                                d.plot.plot_diagram(dgms[k],pt_style = {'color':colors[k], 'label':'dim = '+str(k)})
-                                plt.legend(loc = 'best')
+                                except ValueError:
+                                    continue
 
-                            except ValueError:
-                                continue
+                                else:
+                                    ax.legend()
             plt.show()
 
 
@@ -88,16 +93,37 @@ class GO_data:
         show_Win = [self.Win_kihus[i] for i in show_index]
         show_Lose = [self.Lose_kihus[i] for i in show_index]
         fig, axes = plt.subplots(show_num, 2, figsize = (12, 20))
+        axes = axes.ravel()
         for i in range(show_num):
             point = show_Win[i].T
-            axes[i][0].scatter(point[0], point[1], color = 'r')
+            axes[2 * i].scatter(point[0], point[1], color = 'r')
             point = show_Lose[i].T
-            axes[i][1].scatter(point[0], point[1], color = 'b')
+            axes[2 * i + 1].scatter(point[0], point[1], color = 'b')
         plt.show()
 
-def test():
-    go = GO_data('../Desktop/NHK2006.zip')
-    pers_win = kihu_persistence(go.Win_kihus)
-    pers_win.random_choice_homology()
+def test(hom = False):
+    points = np.random.randn(100,2)
+    points1 = np.random.randn(100,2)
+    f0, f1 = d.fill_rips(pdist(points), 2, 0.5), d.fill_rips(pdist(points1), 2, 0.5)
+    p0, p1 = d.homology_persistence(f0), d.homology_persistence(f1)
+    dgms0, dgms1 = d.init_diagrams(p0, f0), d.init_diagrams(p1, f1 )
+    fig, ax = plt.subplots(1, 10)
+    for i, a in enumerate(ax):
+        if i < len(dgms0):
+            try:
+                a = d.plot.plot_diagram(dgms0[i])
+            except:
+                continue
+        else:
+            try:
+                a = d.plt.plot_diagram(dgms1[i - len(dgms0)])
+            except:
+                continue
+
+    plt.show()
+    if hom == True:
+        pers_win = kihu_persistence(go.Win_kihus)
+        pers_win.random_choice_homology()
+
 
 test()
