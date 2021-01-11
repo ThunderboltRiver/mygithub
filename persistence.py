@@ -31,7 +31,7 @@ class kihu_persistence:
                 for fill in self.two_dim_fill_list[i]:
                     p = d.homology_persistence(fill)
                     dgms = d.init_diagrams(p, fill)
-                    fig, axes = plt.subplots(choice_size, len(dgms))
+                    fig, axes = plt.subplots(1, len(dgms), figsize = (12, 20))
                     for k in range(len(dgms)):
                         if plot == 'bards':
                             try:
@@ -51,8 +51,8 @@ class kihu_persistence:
 
                             except ValueError:
                                 continue
-            plt.legend(loc = 'best')
-            plt.show()
+                plt.legend(loc = 'best')
+            plt.show()  
 
 
 class GO_data:
