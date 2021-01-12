@@ -31,27 +31,27 @@ class kihu_persistence:
             dim2_fill_lens = np.array([len(dim2_fill) for dim2_fill in dim2_fill_list])
             axes_depo = [np.sum(dim2_fill_lens[: i]) for i in range(len(dim2_fill_lens) + 1)]
             dgms_lists = []
-            fig, axes = plt.subplots(1 ,axes_depo[-1] , figsize = (12 , 20) )
-            for i, a in enumerate(axes):
-                for j in range(choice_size):
-                    if axes_depo[j] <= i < axes_depo[j + 1]:
-                        dim2_fill_dgms = []
-                        for l, fill in enumerate(dim2_fill_list[j]):
-                            p = d.homology_persistence(fill)
-                            dgms = d.init_diagrams(p, fill)
-                            dim2_fill_dgms.append(dgms)
-                            for k, dgm in enumerate(dgms):
-                                if l < len(dim2_fill_list[j]) - 1:
-                                    style = {'color': colors[k]}
-                                else:
-                                    style = {'color':colors[k] ,'label': 'dim = '+ str(k)}
-                                try:
-                                    d.plot.plot_diagram(dgm,ax = axes[i], pt_style = style)
+            for count, dim2_fill in enumerate(dim2_fill_list):
+                print(f'loading dim2_fill {count}')
+                fig, axes = plt.subplots(4,4, figsize = (12, 20))
+                one_dim_axes = axes.ravel()
+                dim2_fill_dgms = []
+                for i, fill in enumerate(dim2_fill):
+                    p = d.homology_persistence(fill)
+                    dgms = d.init_diagrams(p, fill)
+                    dim2_fill_dgms.append(dgms)
+                    for k, dgm in enumerate(dgms):
+                        style = {'color':colors[k]}
+                        if fill == dim2_fill[-1]:
+                            style = {'color': colors[k], 'label': 'dim = ' + str(k)}
 
-                                except ValueError:
-                                    continue
-                        dgms_lists.append(dim2_fill_dgms)
-            fig.legend()
+                        try:
+                            d.plot.plot_diagram(dgm,ax = one_dim_axes[i], pt_style = style)
+
+                        except ValueError:
+                            continue
+                dgms_lists.append(dim2_fill_dgms)
+                fig.legend()
             if show == True:
                 plt.show()
 
@@ -101,7 +101,6 @@ class GO_data:
 def test():
     go = GO_data('../Desktop/NHK2006.zip')
     pers_win = kihu_persistence(go.Win_kihus)
-    pers_win.random_choice_homology()
-
+    pers_win.random_choice_homology(choice_size = 10)
 
 test()
