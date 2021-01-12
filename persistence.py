@@ -27,35 +27,31 @@ class kihu_persistence:
         colors = ['r','g','b','c','m','y','k']
         if root == None:
             choice_index = np.random.choice(len(self.dim2_fill_list), size = choice_size, replace = replace_bool)
-            dim2_fill_list = [self.dim2_fill_list[i]  for i in choice_index]
-            dim2_fill_lens = np.array([len(dim2_fill) for dim2_fill in dim2_fill_list])
-            axes_depo = [np.sum(dim2_fill_lens[: i]) for i in range(len(dim2_fill_lens) + 1)]
-            dgms_lists = []
-            for count, dim2_fill in enumerate(dim2_fill_list):
+            dim2fill_list = [self.dim2_fill_list[i]  for i in choice_index]
+            dim2fill_dgms_lists = []
+            for count, dim2fill in enumerate(dim2fill_list):
                 print(f'loading dim2_fill {count}')
-                fig, axes = plt.subplots(4,4, figsize = (12, 20))
-                one_dim_axes = axes.ravel()
-                dim2_fill_dgms = []
-                for i, fill in enumerate(dim2_fill):
-                    p = d.homology_persistence(fill)
-                    dgms = d.init_diagrams(p, fill)
-                    dim2_fill_dgms.append(dgms)
-                    for k, dgm in enumerate(dgms):
-                        style = {'color':colors[k]}
-                        if fill == dim2_fill[-1]:
-                            style = {'color': colors[k], 'label': 'dim = ' + str(k)}
-
-                        try:
-                            d.plot.plot_diagram(dgm,ax = one_dim_axes[i], pt_style = style)
-
-                        except ValueError:
-                            continue
-                dgms_lists.append(dim2_fill_dgms)
-                fig.legend()
+                dim2fill_dgms = [d.init_diagrams(d.homology_persistence(fill), fill) for fill in dim2fill]
+                dim2fill_dgms_lists.append(dim2fill_dgms)
             if show == True:
-                plt.show()
+               for dim2fill_dgms in dim2fill_dgms_lists:
+                   fig, axes = plt.subplots(4, 4, figsize = (12, 20))
+                   one_dim_axes = axes.ravel()
+                   for i, dgms in enumerate(dim2fill_dgms):
+                       for k, dgm in enumerate(dgms):
+                           style = {'color':colors[k]}
+                           if dgms == dim2fill_dgms[-1]:
+                               style['label'] = 'dim = ' + str(k)
 
-        return dgms_lists
+                           try:
+                               d.plot.plot_diagram(dgm,ax = one_dim_axes[i], pt_style = style)
+
+                           except ValueError:
+                               continue
+                   fig.legend()
+               plt.show()
+
+        return dim2fill_dgms_lists
 
 
 class GO_data:
