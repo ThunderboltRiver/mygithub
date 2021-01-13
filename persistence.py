@@ -6,52 +6,52 @@ from sgfmill import sgf
 from scipy.spatial.distance import pdist
 
 class kihu_persistence:
-    def __init__(self, Win_or_Lose_kihus, dim = 2, radius = 2 * np.sqrt(2), step = 10):
+    def __init__(self, GO_data, dim = 2, radius = 2 * np.sqrt(2), step = 10):
         ##initializing parameter
         self.radius = radius
         self.dim = dim
         self.step = step
-        self.kihus = Win_or_Lose_kihus
+        self.Win_kihus = GO_data.Win_kihus
+        self.Lose_kihus = GO_data.Lose_kihus
+        self.num_games = GO_data.num_games
+        self.dim2fill_dgms_lists = []
         ##making filltration
-        self.dim2_fill_list = []
-        for kihu in self.kihus:
-            remainder = len(kihu) % step
-            turns = np.arange(step, len(kihu),step)
-            if remainder >= step / 2:
-                turns = np.append(turns, len(kihu))
-            else:
-                turns[-1] = len(kihu)
-            self.dim2_fill_list.append([d.fill_rips(pdist(kihu[: t]), dim, radius) for t in turns])
+        self.winners_dim2fill = []
+        self.losers_dim2fill = []
+        for kihu in self.Win_kihus:
+            turns = step_turns(kihu, step)
+            self.winners_dim2fill.append([d.fill_rips(pdist(kihu[: t]), dim, radius) for t in turns])
 
-    def random_choice_homology(self, choice_size = 1, replace_bool = False , root = None, plot = None, show = True):
-        colors = ['r','g','b','c','m','y','k']
-        if root == None:
-            choice_index = np.random.choice(len(self.dim2_fill_list), size = choice_size, replace = replace_bool)
-            dim2fill_list = [self.dim2_fill_list[i]  for i in choice_index]
+        for kihu in self.Lose_kihus:
+            turns = step_turns(kihu, step)
+            self.losers_dim2fill.append([d.fill_rips(pdist(kihu[: t]), dim, radius) for t in turns])
+
+    def random_choice_homology(self, choice_size = 1, replace = False ,compare = False, show = True):
+        random_indexes = np.random.choice(self.num_games, choice_size, replace = replace)
+        return self.choice_homology(random_indexes, compare = compare, show = show)
+
+
+    def choice_homology(self, indexes, compare = False, show = True):
+        out = []
+        persons_dim2fill = [self.winners_dim2fill]
+        if compare == True:
+            persons_dim2fill.append(self.losers_dim2fill)
+        for dim2fill_list in persons_dim2fill:
             dim2fill_dgms_lists = []
+            dim2fill_list = [dim2fill_list[i]  for i in indexes]
             for count, dim2fill in enumerate(dim2fill_list):
                 print(f'loading dim2_fill {count}')
                 dim2fill_dgms = [d.init_diagrams(d.homology_persistence(fill), fill) for fill in dim2fill]
                 dim2fill_dgms_lists.append(dim2fill_dgms)
-            if show == True:
-               for dim2fill_dgms in dim2fill_dgms_lists:
-                   fig, axes = plt.subplots(4, 4, figsize = (12, 20))
-                   one_dim_axes = axes.ravel()
-                   for i, dgms in enumerate(dim2fill_dgms):
-                       for k, dgm in enumerate(dgms):
-                           style = {'color':colors[k]}
-                           if dgms == dim2fill_dgms[-1]:
-                               style['label'] = 'dim = ' + str(k)
+            out.append(dim2fill_dgms_lists)
 
-                           try:
-                               d.plot.plot_diagram(dgm,ax = one_dim_axes[i], pt_style = style)
+        if show == True:
+           title_list = ['winner', 'loser']
+           for i, dim2fill_dgms_lists in enumerate(out):
+               plot_dim2fill_dgms(dim2fill_dgms_lists, title = title_list[i], show = False)
+           plt.show()
 
-                           except ValueError:
-                               continue
-                   fig.legend()
-               plt.show()
-
-        return dim2fill_dgms_lists
+        return out
 
 
 class GO_data:
@@ -80,6 +80,8 @@ class GO_data:
                     self.Win_kihus.append(win_kihu)
                     self.Lose_kihus.append(lose_kihu)
 
+        self.num_games = len(self.b_players)
+
     def kihu_random_plot(self,show_num = 1):
         kihus_len = len(self.Win_kihus)
         show_index = np.random.choice(np.arange(kihus_len), size = show_num)
@@ -94,9 +96,45 @@ class GO_data:
             axes[2 * i + 1].scatter(point[0], point[1], color = 'b')
         plt.show()
 
+
+def step_turns(kihu, step):
+    remainder = len(kihu) % step
+    turns = np.arange(step, len(kihu),step)
+    if remainder >= step / 2:
+        turns = np.append(turns, len(kihu))
+    else:
+        turns[-1] = len(kihu)
+
+    return turns
+
+def plot_dim2fill_dgms(dim2fill_dgms_lists, title = None, show = True):
+    colors = ['r','g','b','c','m','y','k']
+    for dim2fill_dgms in dim2fill_dgms_lists:
+        fig, axes = plt.subplots(4, 4, figsize = (12, 20))
+        one_dim_axes = axes.ravel()
+        for i, dgms in enumerate(dim2fill_dgms):
+            for k, dgm in enumerate(dgms):
+                style = {'color':colors[k]}
+                if dgms == dim2fill_dgms[-1]:
+                    style['label'] = 'dim = ' + str(k)
+
+                try:
+                    d.plot.plot_diagram(dgm,ax = one_dim_axes[i], pt_style = style)
+
+                except ValueError:
+                    continue
+
+        fig.legend()
+        fig.suptitle(title)
+    if show == True:
+        plt.show()
+
+
 def test():
     go = GO_data('../Desktop/NHK2006.zip')
-    pers_win = kihu_persistence(go.Win_kihus)
-    pers_win.random_choice_homology(choice_size = 10)
+    kp = kihu_persistence(go)
+    h = kp.random_choice_homology(compare = True)
+
+    return h
 
 test()
