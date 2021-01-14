@@ -132,4 +132,4 @@ def plot_dim2fill_dgms(dim2fill_dgms_lists, title = None, show = True):
 def test(zip_path, choice_size, compare, show):
     go = GO_data(zip_path)
     kp = kihu_persistence(go)
-    kp.random_choice_homology(choice_size = choice_size, compare = compare, show)
+    kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show)
