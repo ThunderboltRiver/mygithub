@@ -15,6 +15,7 @@ class kihu_persistence:
         self.Lose_kihus = GO_data.Lose_kihus
         self.num_games = GO_data.num_games
         self.dim2fill_dgms_lists = []
+        self.homology_count = 0
         ##making filltration
         self.winners_dim2fill = []
         self.losers_dim2fill = []
@@ -26,12 +27,12 @@ class kihu_persistence:
             turns = step_turns(kihu, step)
             self.losers_dim2fill.append([d.fill_rips(pdist(kihu[: t]), dim, radius) for t in turns])
 
-    def random_choice_homology(self, choice_size = 1, replace = False ,compare = False, show = True):
+    def random_choice_homology(self, choice_size = 1, replace = False ,compare = False, show = True, save = False, figpath = None):
         random_indexes = np.random.choice(self.num_games, choice_size, replace = replace)
-        return self.choice_homology(random_indexes, compare = compare, show = show)
+        return self.choice_homology(random_indexes, compare = compare, show = show, save = save, figpath = figpath)
 
 
-    def choice_homology(self, indexes, compare = False, show = True):
+    def choice_homology(self, indexes, compare = False, show = True, save = False, figpath = None):
         out = []
         persons_dim2fill = [self.winners_dim2fill]
         if compare == True:
@@ -45,11 +46,17 @@ class kihu_persistence:
                 dim2fill_dgms_lists.append(dim2fill_dgms)
             out.append(dim2fill_dgms_lists)
 
-        if show == True:
-           people_list = ['winner', 'loser']
-           for i, dim2fill_dgms_lists in enumerate(out):
-               plot_dim2fill_dgms(dim2fill_dgms_lists, title = f'{people_list[i]} step = {self.step} ', show = False)
-           plt.show()
+        if show == True or save == True:
+            people_list = ['winner', 'loser']
+            for i, dim2fill_dgms_lists in enumerate(out):
+                plot_dim2fill_dgms(dim2fill_dgms_lists, title = f'{people_list[i]} step = {self.step} ', show = False)
+                if save == True:
+                    fig_name = f'{figpath}_{people_list[i]}{self.homology_count}'
+                    plt.savefig(fig_name)
+                    print(f'saved {fig_name}')
+            if show == True:
+                plt.show()
+            self.homology_count += 1
 
         return out
 
@@ -129,7 +136,8 @@ def plot_dim2fill_dgms(dim2fill_dgms_lists, title = None, show = True):
     if show == True:
         plt.show()
 
-def test(zip_path, choice_size, compare, show):
+def test(zip_path, choice_size, compare, show, save, figpath, repeat):
     go = GO_data(zip_path)
     kp = kihu_persistence(go)
-    kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show)
+    for i in range(repeat):
+        kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show, save = save, figpath = figpath)
