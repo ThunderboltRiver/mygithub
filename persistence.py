@@ -46,9 +46,9 @@ class kihu_persistence:
             out.append(dim2fill_dgms_lists)
 
         if show == True:
-           title_list = ['winner', 'loser']
+           people_list = ['winner', 'loser']
            for i, dim2fill_dgms_lists in enumerate(out):
-               plot_dim2fill_dgms(dim2fill_dgms_lists, title = title_list[i], show = False)
+               plot_dim2fill_dgms(dim2fill_dgms_lists, title = f'{people_list[i]} step = {self.step} ', show = False)
            plt.show()
 
         return out
@@ -109,7 +109,7 @@ def step_turns(kihu, step):
 
 def plot_dim2fill_dgms(dim2fill_dgms_lists, title = None, show = True):
     colors = ['r','g','b','c','m','y','k']
-    for dim2fill_dgms in dim2fill_dgms_lists:
+    for number, dim2fill_dgms in enumerate(dim2fill_dgms_lists):
         fig, axes = plt.subplots(4, 4, figsize = (12, 20))
         one_dim_axes = axes.ravel()
         for i, dgms in enumerate(dim2fill_dgms):
@@ -125,16 +125,11 @@ def plot_dim2fill_dgms(dim2fill_dgms_lists, title = None, show = True):
                     continue
 
         fig.legend()
-        fig.suptitle(title)
+        fig.suptitle(f'number = {number} {title}')
     if show == True:
         plt.show()
 
-
-def test():
-    go = GO_data('../Desktop/NHK2006.zip')
+def test(zip_path, choice_size, compare, show):
+    go = GO_data(zip_path)
     kp = kihu_persistence(go)
-    h = kp.random_choice_homology(compare = True)
-
-    return h
-
-test()
+    kp.random_choice_homology(choice_size = choice_size, compare = compare, show)
