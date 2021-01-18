@@ -154,3 +154,4 @@ def test(zip_path, choice_size, compare, show, save, figname_head, repeat):
     kp = kihu_persistence(go)
     for i in range(repeat):
         kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show, save = save, figname_head = figname_head)
+##test
