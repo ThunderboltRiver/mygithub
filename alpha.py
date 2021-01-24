@@ -12,68 +12,68 @@ class Circumscribed_circle:
     def __init__(self, Points):
         self.Points = Points
         self.center = np.array([])
-        self.radius = None
+        self.radius = 0.0
         
         if len(Points)==1:
             self.center = Points
-            self.radius = 0.0
             
         else:
-            A = Points[:len(Points) - 1] - Points[-1]
+            CircumMatrix = Points[:len(Points) - 1] - Points[-1]
             dim = Points.shape[1]
             x = sp.symbols([f'x{i}' for i in range(dim)])
-            b = (np.linalg.norm(Points[:len(Points) - 1], axis = 1)**2 - np.linalg.norm(Points[-1])**2) / 2.0
-            system = sp.Matrix(A), sp.Matrix(b)
-            general_center = sp.Matrix(list(sp.linsolve(system, x))[0])
-            print(general_center)
+            CircumVector = (np.linalg.norm(Points[:len(Points) - 1], axis = 1)**2 - np.linalg.norm(Points[-1])**2) / 2.0
+            system = sp.Matrix(CircumMatrix), sp.Matrix(CircumVector)
+            GeneralCenter = sp.Matrix(list(sp.linsolve(system, x))[0])
             
-            if len(general_center):
-                grad = (sp.Matrix(Points[0]) - general_center).T * general_center.jacobian(x)
-                print(f'{grad =}')
-                norm_grad = grad.norm()
+            if len(GeneralCenter):
+                Point = Points[0]
+                grad_GeneralCenter = (sp.Matrix(Point) - GeneralCenter).T * GeneralCenter.jacobian(x)
                 
-                if norm_grad:
-                    CenterSolution = sp.solve(grad, x)
-                    print(f'{CenterSolution= }')
-                    for condition in general_center:
+                if grad_GeneralCenter.norm():
+                    CenterSolution = sp.solve(grad_GeneralCenter, x)
+                    for condition in GeneralCenter:
                         for key, value in CenterSolution.items():
                             condition = condition.subs(key, value)
-                        self.center = np.append(self.center, condition)
+                        self.center = np.append(self.center, float(condition))
                     
                 else:
-                    self.center = np.array(general_center).flatten()
+                    self.center = np.array(GeneralCenter, dtype = float).flatten()
                     
-                print(f'{self.center=}')
-                Point = Points[0]
-                print(f'{Point=}, info:{Point.dtype}')
-                print(f'{Point - self.center=}')
-                self.radius = float(np.linalg.norm(Point - self.center.astype(np.float64)))
+                
+                self.radius = float(np.linalg.norm(Point - self.center))
 
 
-def Delaunay_Complex(Points):
+def fill_alpha(Points, Maxdim = 3, Maxradius = float('inf')):
     f = d.Filtration()
-    dim = Points.shape[1]
+    Pdim = Points.shape[1]
     for SubSet in powerset(Points):
-        if len(SubSet):
-            print(len(SubSet))
+        if 0 < len(SubSet) <= Maxdim:
             SubPoints = np.array(SubSet)
             circle = Circumscribed_circle(SubPoints)
-            if len(circle.center):
-                SubIndexes = np.array([])
+            if len(circle.center) and circle.radius <= Maxradius:
+                SubIndexes = []
                 for childpoint in SubPoints:
                     for i, parepoint in enumerate(Points):
-                        if np.sum(childpoint == parepoint) == dim:
-                            SubIndexes = np.append(SubIndexes, i)
-                SubIndexes = SubIndexes.astype(np.int64)
-                print(f'{circle.radius=}')
+                        if np.sum(childpoint == parepoint) == Pdim:
+                            SubIndexes.append(i)
                 Simplex = d.Simplex(SubIndexes, circle.radius)
                 f.append(Simplex)
+                
+    f.sort()
+                
     
     return f
 
-points = np.array([[1.0,0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]])
-f = Delaunay_Complex(points)
-for s in f:
-    print(s)
+def test():
+    points = np.array([[1.0,0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]])
+    f = fill_alpha(points)
+    for s in f:
+        print(s)
+        
+    p = d.homology_persistence(f)
+    dgms = d.init_diagrams(p, f)
+    d.plot.plot_bars(dgms[0], show = True)
+    
+test()
 
 
