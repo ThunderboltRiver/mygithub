@@ -164,8 +164,4 @@ def main(zip_path, figname_head, choice_size = 5, compare = True, show = False, 
     for i in range(repeat):
         kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show, save = save, figname_head = figname_head)
         
-os.chdir('../../../')
-zip_path = 'Dataset/NHK2006.zip'
-figname_head = 'Desktop/homology'
-main(zip_path, figname_head)
 
