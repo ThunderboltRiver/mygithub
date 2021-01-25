@@ -1,15 +1,16 @@
 import zipfile as zf
 import dionysus as d
+from alpha import *
 import numpy as np
 import matplotlib.pyplot as plt
 from sgfmill import sgf
 from scipy.spatial.distance import pdist
 
 class kihu_persistence:
-    def __init__(self, GO_data, dim = 2, radius = 2 * np.sqrt(2), step = 10):
+    def __init__(self, GO_data, Maxdim = 2, Maxradius = 3 * np.sqrt(2), step = 'middle'):
         ##initializing parameter
-        self.radius = radius
-        self.dim = dim
+        self.Maxradius = Maxradius
+        self.Maxdim = Maxdim
         self.step = step
         self.Win_kihus = GO_data.Win_kihus
         self.Lose_kihus = GO_data.Lose_kihus
@@ -19,13 +20,7 @@ class kihu_persistence:
         ##making filltration
         self.winners_dim2fill = []
         self.losers_dim2fill = []
-        for kihu in self.Win_kihus:
-            turns = step_turns(kihu, step)
-            self.winners_dim2fill.append([d.fill_rips(pdist(kihu[: t]), dim, radius) for t in turns])
 
-        for kihu in self.Lose_kihus:
-            turns = step_turns(kihu, step)
-            self.losers_dim2fill.append([d.fill_rips(pdist(kihu[: t]), dim, radius) for t in turns])
 
     def random_choice_homology(self, choice_size = 1, replace = False ,compare = False, show = True, save = False, figname_head = None):
         random_indexes = np.random.choice(self.num_games, choice_size, replace = replace)
@@ -35,13 +30,23 @@ class kihu_persistence:
     def choice_homology(self, indexes, compare = False, show = True, save = False, figname_head = None):
         persons_dim2filldgms_list = []
         persons = ['winner', 'loser']
+        
+        Win_kihus = [self.Win_kihus[i] for i in indexes]
+        for kihu in Win_kihus:
+            turns = step_turns(kihu, self.step)
+            self.winners_dim2fill.append([fill_alpha(kihu[: t], self.Maxdim, self.Maxradius) for t in turns])
         persons_dim2fill = [self.winners_dim2fill]
+        
         if compare:
+            Lose_kihus = [self.Lose_kihus[i] for i in indexes]
+            for kihu in Lose_kihus:
+                turns = step_turns(kihu, self.step)
+                self.losers_dim2fill.append([fill_alpha(kihu[: t], self.Maxdim, self.Maxradius) for t in turns])
             persons_dim2fill.append(self.losers_dim2fill)
+
         for person, dim2fill_list in enumerate(persons_dim2fill):
             dim2filldgms_list = []
-            compute_dim2fill_list = [dim2fill_list[i]  for i in indexes]
-            for number, dim2fill in enumerate(compute_dim2fill_list):
+            for number, dim2fill in enumerate(dim2fill_list):
                 print(f'computing dim2 filtration diagrams of {persons[person]} {number}')
                 dim2filldgms = [d.init_diagrams(d.homology_persistence(fill), fill) for fill in dim2fill]
                 dim2filldgms_list.append(dim2filldgms)
@@ -83,13 +88,13 @@ class GO_data:
                 self.w_players.append(root_node.get('PW'))
                 self.kihus.append([node.get_move() for node in game.get_main_sequence() if node.get_move() != (None, None) ])
                 for i, kihu in enumerate(self.kihus):
-                    win_kihu = np.array([goishi[1] for goishi in kihu if goishi[0] == self.winners[i]])
-                    lose_kihu = np.array([goishi[1] for goishi in kihu if goishi[0] != self.winners[i]])
+                    win_kihu = np.array([np.array(goishi[1], dtype = float) for goishi in kihu if goishi[0] == self.winners[i]])
+                    lose_kihu = np.array([np.array(goishi[1], dtype = float) for goishi in kihu if goishi[0] != self.winners[i]])
                     self.Win_kihus.append(win_kihu)
                     self.Lose_kihus.append(lose_kihu)
 
         self.num_games = len(self.b_players)
-
+        
     def kihu_random_plot(self,show_num = 1):
         kihus_len = len(self.Win_kihus)
         show_index = np.random.choice(np.arange(kihus_len), size = show_num)
@@ -106,12 +111,16 @@ class GO_data:
 
 
 def step_turns(kihu, step):
-    remainder = len(kihu) % step
-    turns = np.arange(step, len(kihu),step)
-    if remainder >= step / 2:
-        turns = np.append(turns, len(kihu))
+    if step == 'middle':
+        turns = [len(kihu) // 2, len(kihu)]
+        
     else:
-        turns[-1] = len(kihu)
+        remainder = len(kihu) % step
+        turns = np.arange(step, len(kihu),step)
+        if remainder >= step / 2:
+            turns = np.append(turns, len(kihu))
+        else:
+            turns[-1] = len(kihu)
 
     return turns
 
@@ -149,9 +158,14 @@ def plot_dim2filldgms(dim2filldgms_list, title = None, show = True, save = False
     if show:
         plt.show()
 
-def test(zip_path, choice_size, compare, show, save, figname_head, repeat):
+def main(zip_path, figname_head, choice_size = 5, compare = True, show = False, save = True, repeat = 1):
     go = GO_data(zip_path)
     kp = kihu_persistence(go)
     for i in range(repeat):
         kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show, save = save, figname_head = figname_head)
-##test
+        
+os.chdir('../../../')
+zip_path = 'Dataset/NHK2006.zip'
+figname_head = 'Desktop/homology'
+main(zip_path, figname_head)
+

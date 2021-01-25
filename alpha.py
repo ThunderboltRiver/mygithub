@@ -2,6 +2,7 @@ from itertools import chain,combinations
 import sympy as sp
 import numpy as np
 import dionysus as d
+import os
 
 def powerset(iterable):
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
@@ -23,9 +24,9 @@ class Circumscribed_circle:
             x = sp.symbols([f'x{i}' for i in range(dim)])
             CircumVector = (np.linalg.norm(Points[:len(Points) - 1], axis = 1)**2 - np.linalg.norm(Points[-1])**2) / 2.0
             system = sp.Matrix(CircumMatrix), sp.Matrix(CircumVector)
-            GeneralCenter = sp.Matrix(list(sp.linsolve(system, x))[0])
-            
+            GeneralCenter = sp.linsolve(system, x)
             if len(GeneralCenter):
+                GeneralCenter = sp.Matrix(list(GeneralCenter)[0])
                 Point = Points[0]
                 grad_GeneralCenter = (sp.Matrix(Point) - GeneralCenter).T * GeneralCenter.jacobian(x)
                 
@@ -43,11 +44,11 @@ class Circumscribed_circle:
                 self.radius = float(np.linalg.norm(Point - self.center))
 
 
-def fill_alpha(Points, Maxdim = 3, Maxradius = float('inf')):
+def fill_alpha(Points, Maxdim = 2, Maxradius = float('inf')):
     f = d.Filtration()
     Pdim = Points.shape[1]
     for SubSet in powerset(Points):
-        if 0 < len(SubSet) <= Maxdim:
+        if 0 < len(SubSet) <= Maxdim + 1:
             SubPoints = np.array(SubSet)
             circle = Circumscribed_circle(SubPoints)
             if len(circle.center) and circle.radius <= Maxradius:
@@ -56,14 +57,15 @@ def fill_alpha(Points, Maxdim = 3, Maxradius = float('inf')):
                     for i, parepoint in enumerate(Points):
                         if np.sum(childpoint == parepoint) == Pdim:
                             SubIndexes.append(i)
+                            break
                 Simplex = d.Simplex(SubIndexes, circle.radius)
                 f.append(Simplex)
-                
-    f.sort()
-                
-    
-    return f
-
+        
+        elif len(SubSet) > Maxdim + 1:
+            f.sort()
+            print('--------create_alpha_filtration---------')
+            return f
+            
 def test():
     points = np.array([[1.0,0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]])
     f = fill_alpha(points)
@@ -74,6 +76,6 @@ def test():
     dgms = d.init_diagrams(p, f)
     d.plot.plot_bars(dgms[0], show = True)
     
-test()
+
 
 
