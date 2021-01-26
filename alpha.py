@@ -74,7 +74,8 @@ def ndarrays_difference(ndarray1, ndarray2):
     
 
 def fill_alpha(Points, Maxdim = 2, Maxradius = float('inf')):
-    f = d.Filtration()
+    f = d.Filtration([])
+    print(f)
     Pdim = Points.shape[1]
     PointsSet = ndarray_to_set(Points)
     PreviousPointsSet = set()
@@ -84,25 +85,29 @@ def fill_alpha(Points, Maxdim = 2, Maxradius = float('inf')):
         f = filtration_cash[-1]
         print('use filtration_cash')
         
-    NewPointsSet = PointsSet - PreviousPointsSet)
+    NewPointsSet = PointsSet - PreviousPointsSet
     
     for SubPointsSet in condi_powerset(Points, lambda SubPointsSet:have_intersection(SubPointsSet, NewPointsSet)):
         SubPoints = np.array(SubPointsSet)
-        circle = Circumscribed_circle(SubPoints)
-        if len(circle.center) and circle.radius <= Maxradius:
-            SubIndexes = []
-            for childpoint in SubPoints:
-                for i, parepoint in enumerate(Points):
-                    if np.sum(childpoint == parepoint) == Pdim:
-                        SubIndexes.append(i)
-                        break
-                        
-            Simplex = d.Simplex(SubIndexes, radius)
-            f.append(Simplex)
-            
-            del childpoint, i, parepoint, SubIndexes, Simplex
+        print(SubPoints)
+        if 0 < len(SubPoints) <= Maxdim + 1:
+            circle = Circumscribed_circle(SubPoints)
+            if len(circle.center) and circle.radius <= Maxradius:
+                SubIndexes = []
+                for childpoint in SubPoints:
+                    for i, parepoint in enumerate(Points):
+                        if np.sum(childpoint == parepoint) == Pdim:
+                            SubIndexes.append(i)
+                            break
+                                  
+                Simplex = d.Simplex(SubIndexes, circle.radius)
+                f.append(Simplex)
                 
-        else len(SubSet) > Maxdim + 1:
+                del childpoint, i, parepoint, SubIndexes, Simplex
+            print('check')
+            print(f)
+            
+        elif len(SubPoints) > Maxdim + 1:
             f.sort()
             print('--------create_alpha_filtration---------')
             PointsSet_cash.append(PointsSet)
@@ -115,10 +120,6 @@ def test():
     f = fill_alpha(points)
     for s in f:
         print(s)
-        
-    p = d.homology_persistence(f)
-    dgms = d.init_diagrams(p, f)
-    d.plot.plot_bars(dgms[0], show = True)
 
 
 
