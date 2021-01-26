@@ -87,11 +87,20 @@ class GO_data:
                 self.b_players.append(root_node.get('PB'))
                 self.w_players.append(root_node.get('PW'))
                 self.kihus.append([node.get_move() for node in game.get_main_sequence() if node.get_move() != (None, None) ])
-                for i, kihu in enumerate(self.kihus):
-                    win_kihu = np.array([np.array(goishi[1], dtype = float) for goishi in kihu if goishi[0] == self.winners[i]])
-                    lose_kihu = np.array([np.array(goishi[1], dtype = float) for goishi in kihu if goishi[0] != self.winners[i]])
-                    self.Win_kihus.append(win_kihu)
-                    self.Lose_kihus.append(lose_kihu)
+        for i, kihu in enumerate(self.kihus):
+            win_kihu = []
+            lose_kihu = []
+            for goishi in kihu:
+                if win_kihu == None:
+                    print('None')
+                if (goishi[0] == self.winners[i]) and (goishi[1] not in win_kihu) :
+                    win_kihu.append(goishi[1])
+                    
+                elif (goishi[0] != self.winners[i]) and (goishi[1] not in lose_kihu):
+                    lose_kihu.append(goishi[1])
+                
+            self.Win_kihus.append(np.array(win_kihu, dtype = float))
+            self.Lose_kihus.append(np.array(lose_kihu, dtype = float))
 
         self.num_games = len(self.b_players)
         
@@ -158,10 +167,7 @@ def plot_dim2filldgms(dim2filldgms_list, title = None, show = True, save = False
     if show:
         plt.show()
 
-def main(zip_path, figname_head, choice_size = 5, compare = True, show = False, save = True, repeat = 1):
+def main(zip_path, figname_head = None, choice_size = 5, compare = True, show = False, save = True, repeat = 1):
     go = GO_data(zip_path)
-    kp = kihu_persistence(go)
-    for i in range(repeat):
-        kp.random_choice_homology(choice_size = choice_size, compare = compare, show = show, save = save, figname_head = figname_head)
-        
+    print(type(go.Win_kihus[1]))
 

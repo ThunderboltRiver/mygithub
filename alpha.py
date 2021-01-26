@@ -4,10 +4,26 @@ import numpy as np
 import dionysus as d
 import os
 
+
+PointsSet_cash = []
+filtration_cash = []
+
+
+def get_key_from_value(d, val):
+    keys = [k for k, v in d.items() if v == val]
+    if keys:
+        return keys[0]
+    return None
+
 def powerset(iterable):
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+    
+def condi_powerset(iterable, func):
+    for s in powerset(iterable):
+        if func(s):
+            yield s
 
 class Circumscribed_circle:
     def __init__(self, Points):
@@ -43,29 +59,57 @@ class Circumscribed_circle:
                 
                 self.radius = float(np.linalg.norm(Point - self.center))
 
+def ndarray_to_set(ndarray):
+    return set(tuple(p) for p in ndarray)
+
+                
+def have_intersection(Points1, Points2):
+    set1 = set(tuple(p) for p in Points1)
+    set2 = set(tuple(p) for p in Points2)
+    return not(set1.isdisjoint(set2))
+    
+def ndarrays_difference(ndarray1, ndarray2):
+    set1, set2 = ndarray_to_set(ndarray1), ndarray_to_set(ndarray2)
+    return np.array([row for row in set1 - set2])
+    
 
 def fill_alpha(Points, Maxdim = 2, Maxradius = float('inf')):
     f = d.Filtration()
     Pdim = Points.shape[1]
-    for SubSet in powerset(Points):
-        if 0 < len(SubSet) <= Maxdim + 1:
-            SubPoints = np.array(SubSet)
-            circle = Circumscribed_circle(SubPoints)
-            if len(circle.center) and circle.radius <= Maxradius:
-                SubIndexes = []
-                for childpoint in SubPoints:
-                    for i, parepoint in enumerate(Points):
-                        if np.sum(childpoint == parepoint) == Pdim:
-                            SubIndexes.append(i)
-                            break
-                Simplex = d.Simplex(SubIndexes, circle.radius)
-                f.append(Simplex)
+    PointsSet = ndarray_to_set(Points)
+    PreviousPointsSet = set()
+    
+    if PointsSet_cash and (PointsSet_cash[-1] <= PointsSet):
+        Previous_PointsSet = PointsSet_cash[-1]
+        f = filtration_cash[-1]
+        print('use filtration_cash')
         
-        elif len(SubSet) > Maxdim + 1:
+    NewPointsSet = PointsSet - PreviousPointsSet)
+    
+    for SubPointsSet in condi_powerset(Points, lambda SubPointsSet:have_intersection(SubPointsSet, NewPointsSet)):
+        SubPoints = np.array(SubPointsSet)
+        circle = Circumscribed_circle(SubPoints)
+        if len(circle.center) and circle.radius <= Maxradius:
+            SubIndexes = []
+            for childpoint in SubPoints:
+                for i, parepoint in enumerate(Points):
+                    if np.sum(childpoint == parepoint) == Pdim:
+                        SubIndexes.append(i)
+                        break
+                        
+            Simplex = d.Simplex(SubIndexes, radius)
+            f.append(Simplex)
+            
+            del childpoint, i, parepoint, SubIndexes, Simplex
+                
+        else len(SubSet) > Maxdim + 1:
             f.sort()
             print('--------create_alpha_filtration---------')
+            PointsSet_cash.append(PointsSet)
+            filtration_cash.append(f)
             return f
             
+                    
 def test():
     points = np.array([[1.0,0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]])
     f = fill_alpha(points)
@@ -75,7 +119,6 @@ def test():
     p = d.homology_persistence(f)
     dgms = d.init_diagrams(p, f)
     d.plot.plot_bars(dgms[0], show = True)
-    
 
 
 
