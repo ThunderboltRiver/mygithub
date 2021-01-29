@@ -1,34 +1,20 @@
-from itertools import chain,combinations
+from functools import lru_cache
 import sympy as sp
 import numpy as np
 import dionysus as d
 import math
-import os
 
 
-def get_key_from_value(d, val):
-    keys = [k for k, v in d.items() if v == val]
-    if keys:
-        return keys[0]
-    return None
-
-def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-    
-def condi_powerset(iterable, func):
-    for s in powerset(iterable):
-        s = np.array(s)
-        if func(s):
-            yield s
-
+def hashlize(numpy_ndarray):
+    return frozenset(tuple(a) for a in numpy_ndarray)
+                
+@lru_cache(maxsize = None)
 class Circumscribed_circle:
-    def __init__(self, Points):
-        self.Points = Points
+    def __init__(self, hashlized_Points):
         self.center = np.array([])
         self.radius = 0.0
         
+        Points = np.array([p for p in hashlized_Points], dtype = float)
         if len(Points)==1:
             self.center = Points
             
@@ -60,15 +46,6 @@ class Circumscribed_circle:
 def dist_vector(Points, point):
     return np.linalg.norm(Points - point, axis = 1)
     
-
-def get_index(Points, point):
-    '''
-    if point in Points
-    '''
-    norms = dist_vector(Points, point)
-    for i, dist in enumerate(norms):
-        if math.isclose(dist, 0):
-            return i
     
 def complex_condition(Points, center, radius, Maxradius):
     if len(center):
@@ -80,18 +57,23 @@ def complex_condition(Points, center, radius, Maxradius):
         
                 
 def fill_2D_alpha(Points, Maxradius):
+    '''
+    This function compute 2-skelton of the alpha complex built on the given Points, which difinition based on the way of spheres each centers are given Points.
+    The argument Maxradius is the maximum value of the filtration parameter but I recommend to avoid to use huge radius as argument even if you would like to compute on huge radius,becouse of the long computing time.
+    '''
     Simplexes = []
-    rips = d.fill_rips(Points, 2, 2 * Maxradius)
+    rips = d.fill_rips(Points, 2, 2.0 * Maxradius)
     for simplex in rips:
-        if simplex.dimension() == 1:
-            simplex.data /= 2.0
-        Simplexes.append(simplex)
-        if simplex.dimension() == 2:
-            SubPoints = Points[list(simplex)]
+        Index = list(simplex)
+        if simplex.dimension() <= 1:
+            new_simplex = d.Simplex(Index, simplex.data / 2.0)
+            Simplexes.append(new_simplex)
+        elif simplex.dimension() == 2:
+            SubPoints = hashlize(Points[Index])
             circle = Circumscribed_circle(SubPoints)
             if complex_condition(Points, circle.center, circle.radius, Maxradius):
-                simplex.data = circle.radius
-                Simplexes.append(simplex)
+                new_simplex = d.Simplex(Index, circle.radius)
+                Simplexes.append(new_simplex)
                 
     print('--------create_alpha_filtration---------')
     f = d.Filtration(Simplexes)
@@ -99,18 +81,21 @@ def fill_2D_alpha(Points, Maxradius):
     return f
 
 def test():
-    points1 = np.array([[1.0,0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0],[1.0, 1.0],[-1.0, -1.0]])
-    l = [3, 2, 1, 0]
-    points2 = np.array([[1.0,0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -2.0]])
-    f = fill_2D_alpha(points1, 1.0)
-    for s in f:
-        print(f'f:{s}')
-        
+    '''
+    this is test of creating alpha filtration
+    '''
+    points1 = np.random.random((50, 2))
+    f = fill_2D_alpha(points1, 0.8)
     print(d.is_simplicial(f))
-    g = fill_2D_alpha(points2, 1.0)
-    for s in g:
-        print(f'f:{s}')
-    print(d.is_simplicial(g))
+    for s in f:
+        print(s)
+    pf = d.homology_persistence(f)
+    dgms = d.init_diagrams(pf,f)
+    try:
+        d.plot.plot_diagram(dgms[1], show = True)
+        
+    except ValueError:
+        pass
         
 
 
