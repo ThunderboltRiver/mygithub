@@ -1,13 +1,13 @@
 import zipfile as zf
 import dionysus as d
-from alpha import *
+import alpha as al
 import numpy as np
 import matplotlib.pyplot as plt
 from sgfmill import sgf
 from scipy.spatial.distance import pdist
 
 class kihu_persistence:
-    def __init__(self, GO_data, Maxdim = 2, Maxradius = 3 * np.sqrt(2), step = 'middle'):
+    def __init__(self, GO_data, Maxdim = 2, Maxradius = float('inf'), step = 10):
         ##initializing parameter
         self.Maxradius = Maxradius
         self.Maxdim = Maxdim
@@ -32,16 +32,17 @@ class kihu_persistence:
         persons = ['winner', 'loser']
         
         Win_kihus = [self.Win_kihus[i] for i in indexes]
+        PointsSet_cash = [set()]
+        print('che')
         for kihu in Win_kihus:
             turns = step_turns(kihu, self.step)
-            self.winners_dim2fill.append([fill_alpha(kihu[: t], self.Maxdim, self.Maxradius) for t in turns])
+            self.winners_dim2fill.append([al.fill_2D_alpha(kihu[: t], self.Maxradius) for t in turns])
         persons_dim2fill = [self.winners_dim2fill]
-        
         if compare:
             Lose_kihus = [self.Lose_kihus[i] for i in indexes]
             for kihu in Lose_kihus:
                 turns = step_turns(kihu, self.step)
-                self.losers_dim2fill.append([fill_alpha(kihu[: t], self.Maxdim, self.Maxradius) for t in turns])
+                self.losers_dim2fill.append([al.fill_2D_alpha(kihu[: t], self.Maxradius) for t in turns])
             persons_dim2fill.append(self.losers_dim2fill)
 
         for person, dim2fill_list in enumerate(persons_dim2fill):
@@ -87,6 +88,7 @@ class GO_data:
                 self.b_players.append(root_node.get('PB'))
                 self.w_players.append(root_node.get('PW'))
                 self.kihus.append([node.get_move() for node in game.get_main_sequence() if node.get_move() != (None, None) ])
+                
         for i, kihu in enumerate(self.kihus):
             win_kihu = []
             lose_kihu = []
@@ -167,7 +169,12 @@ def plot_dim2filldgms(dim2filldgms_list, title = None, show = True, save = False
     if show:
         plt.show()
 
-def main(zip_path, figname_head = None, choice_size = 5, compare = True, show = False, save = True, repeat = 1):
-    go = GO_data(zip_path)
-    print(type(go.Win_kihus[1]))
-
+zip_path = '../../../Dataset/NHK2006.zip'
+figname_head = '../../../Desktop/dim2fill_dgms/homology'
+choice_size = 10
+compare = True
+show = False
+save = True
+go = GO_data(zip_path)
+kp = kihu_persistence(go)
+kp.random_choice_homology(figname_head = figname_head, choice_size = choice_size, compare = compare, show = show, save = save)
