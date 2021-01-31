@@ -1,8 +1,8 @@
 import zipfile as zf
 import dionysus as d
-import alpha as al
 import numpy as np
 import matplotlib.pyplot as plt
+import alpha as al
 from sgfmill import sgf
 from scipy.spatial.distance import pdist
 
@@ -66,6 +66,7 @@ class kihu_persistence:
             self.homology_count += 1
 
         return persons_dim2filldgms_list
+        
 
 
 class GO_data:
@@ -168,10 +169,32 @@ def plot_dim2filldgms(dim2filldgms_list, title = None, show = True, save = False
             plt.savefig(f'{figname}{number}')
     if show:
         plt.show()
+        
+def max_persitent_intervals(self, dim2fill_dgms, dim):
+        out = []
+        for t, dgms in enumerate(dim2fill_dgms):
+            intervals = np.array([p.death - p.birth for p in dgms[dim]], dtype = float)
+            out.append([t / len(dim2fill_dgms), np.max(intervals)])
+            
+        return np.array(out, dtype = float)
+      
+  
+def plot_max_interval_time(dim2fill_dgms_list, color = 'b', show = True):
+    for dim2fill_dgms in dim2fill_dgms_list:
+        lines = max_persitent_intervals(dim2fill_dgms).T
+        plt.plot(lines[0], lines[1] ,color = color)
+        
+    if show:
+        plt.show()
+        
+        
+        
+        
+        
 
 zip_path = '../../../Dataset/NHK2006.zip'
 figname_head = '../../../Desktop/dim2fill_dgms/homology'
-choice_size = 10
+choice_size = 1
 compare = True
 show = False
 save = True

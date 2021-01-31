@@ -59,8 +59,8 @@ def complex_condition(Points, center, radius, Maxradius):
 def fill_2D_alpha(Points, Maxradius):
 
     '''
-    This function compute 2-skelton of the alpha complex built on the given Points, which difinition based on the way of spheres each centers are given Points.
-    The argument Maxradius is the maximum value of the filtration parameter but I recommend to avoid to use huge radius as argument even if you would like to compute on huge radius,becouse of the long computing time.
+    This function compute 2-skelton of the alpha complex built on the given Points, which difinition based on the spheres method that each centers are given Points.
+    The argument Maxradius is the maximum value of the filtration parameter.
     '''
     Simplexes = []
     with zipfile.ZipFile('CenterandRadius.zip') as zip:
@@ -78,28 +78,26 @@ def fill_2D_alpha(Points, Maxradius):
                         center, radius = CR[f'{hash(SubPoints)}']
                         
                     except KeyError:
-                        print('NewPoint')
                         center, radius = Circumscribed_circle(SubPoints)
                         CR[f'{hash(SubPoints)}'] = (center, radius)
                         
                     if complex_condition(Points, center, radius, Maxradius):
                         new_simplex = d.Simplex(Index, radius)
                         Simplexes.append(new_simplex)
-                    
+                            
     print('--------create_alpha_filtration---------')
     f = d.Filtration(Simplexes)
     f.sort()
-    return f
+    return f, Simplexes
 
 def test():
     '''
     this is test of creating alpha filtration
     '''
-    points1 = np.array([[1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0]], dtype = float)
-    f = fill_2D_alpha(points1, 1.0)
-    print(d.is_simplicial(f))
-    for s in f:
-        print(s)
+    kihus = np.array([[i, j] for i in range(20) for j in range(20)], dtype = float)
+    index = np.random.choice(np.arange(len(kihus)), size = 50, replace = False)
+    random_kihu = kihus[index]
+    f, Simplexes = fill_2D_alpha(random_kihu, float('inf'))
     pf = d.homology_persistence(f)
     dgms = d.init_diagrams(pf,f)
     try:
